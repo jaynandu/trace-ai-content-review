@@ -74,7 +74,7 @@ Background: [OpenAI's account of its discontinued AI text classifier and its lim
 
 ## Hosting
 
-Deploy `dist` to any static host. There is no server-side runtime to configure. This repository contains the app source without account-specific hosting configuration.
+Deploy `dist` to any static host. For hosts that support `_headers`, verify that those policies are applied. For Worker ESM hosting, run `npm run build` and deploy `dist/server/index.js`; it embeds the assets and applies the HTTP headers to every response. It processes no review text. This repository contains the app source without account-specific hosting configuration.
 
 
 ## Evaluation without misleading accuracy claims
@@ -91,6 +91,6 @@ The JSON file must contain an array of `{ "text": "…", "label": "human", "sour
 
 ## Security and automated checks
 
-See [SECURITY.md](SECURITY.md) for safeguards, hosting requirements, and maintainer settings. Pull requests and pushes to `main` run the regression/security suite with read-only permissions. The HTML carries a restrictive CSP; `_headers` supplies additional HTTP policies on hosts supporting that format. Verify deployed headers independently. Header files are not universal hosting configuration.
+See [SECURITY.md](SECURITY.md) for safeguards, hosting requirements, and maintainer settings. Pull requests and pushes to `main` run the regression/security suite with read-only permissions. The HTML carries a restrictive CSP; `_headers` supplies policies to compatible static hosts. The optional Worker ESM response wrapper embeds the assets and enforces the HTTP policies, including framing restrictions, directly. Verify deployed headers independently. Header files are not universal hosting configuration.
 
 The worker is cancelled when content or language changes, when cleared, or after a ten-second timeout. File reads also cannot overwrite newer edits. Browser-local processing is not a substitute for host authentication or device security.

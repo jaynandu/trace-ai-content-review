@@ -5,7 +5,8 @@
   "description": "Browser-local text review with transparent, unvalidated style heuristics.",
   "scripts": {
     "test": "node --check dist/app.js && node --check dist/engine.js && node --check dist/worker.js && node --test tests/*.test.cjs",
-    "evaluate": "node scripts/evaluate.cjs"
+    "evaluate": "node scripts/evaluate.cjs",
+    "build": "node scripts/build-worker.mjs"
   },
   "engines": {
     "node": ">=20"
