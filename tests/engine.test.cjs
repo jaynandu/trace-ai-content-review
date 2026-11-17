@@ -24,3 +24,69 @@ test('empty input is handled without invalid statistics', () => {
   assert.equal(result.wordCount, 0);
   assert.equal(result.variation, 0);
 });
+
+test('unpunctuated lines are retained', () => {
+  const result = analyze('First complete thought\nSecond complete thought\nThird complete thought');
+  assert.equal(result.sentenceCount, 3);
+  assert.equal(result.wordCount, 9);
+});
+test('abbreviations and decimals do not create spurious sentences', () => {
+  assert.equal(analyze('Dr. Smith paid 3.14 dollars. He left.').sentenceCount, 2);
+});
+test('bullet lists and Windows line endings retain all lines', () => {
+  assert.equal(analyze('- First useful item\r\n2. Second useful item\r\n• Third useful item').sentenceCount, 3);
+});
+test('Unicode boundaries reject embedded phrases and highlight only valid matches', () => {
+  const {findMatches} = require('../dist/engine.js');
+  assert.deepEqual(findMatches('furthermorex éfurthermore furthermoreé _furthermore furthermore_ Furthermore!', ['furthermore']).map(m=>m.text), ['Furthermore']);
+});
+test('apostrophes, accented letters, and emoji are handled without crashes', () => {
+  const {words} = require('../dist/engine.js');
+  assert.deepEqual(words('l’été café 😊'), ['l’été','café']);
+});
+test('unsupported declared languages are rejected', () => {
+  assert.throws(()=>analyze('Bonjour tout le monde.',{language:'fr'}), /Only English/);
+});
+test('engine enforces input size and input type', () => {
+  assert.throws(()=>analyze('a'.repeat(100001)), /limit/);
+  assert.throws(()=>analyze(null), /string/);
+  assert.equal(analyze('a'.repeat(100000)).wordCount, 1);
+});
+test('binary content and invalid file imports are rejected', () => {
+  const {validateFile,validateText} = require('../dist/engine.js');
+  assert.throws(()=>validateText('hello\0world'), /Binary/);
+  assert.throws(()=>validateFile('bad.html',10), /txt/);
+  assert.throws(()=>validateFile('bad.txt',500001), /500 KB/);
+  assert.doesNotThrow(()=>validateFile('GOOD.MD',500000));
+});
+test('short sample uniformity is explicitly unassessed', () => {
+  assert.equal(analyze('One short line.').signals[0].assessed, false);
+});
+test('150-word, 30-sentence uniform sample meets the threshold', () => {
+  const r = analyze(Array(30).fill('We make useful things today.').join(' '));
+  assert.equal(r.enough,true);
+  assert.equal(r.signals[0].flag,true);
+});
+test('default report omits all text-derived observations and excerpts', () => {
+  const {buildReport} = require('../dist/engine.js');
+  const r = analyze('Secret zebra phrase appears today. Secret zebra phrase occurs again. Secret zebra phrase returns tomorrow.');
+  const report = buildReport(r);
+  assert.equal(report.excerptsIncluded,false);
+  assert.equal(report.passages,undefined);
+  assert.equal(report.phrases,undefined);
+  assert.ok(report.signals.every(s=>s.observation===undefined));
+  assert.ok(!JSON.stringify(report).includes('Secret zebra'));
+  assert.ok(!JSON.stringify(report).includes('secret zebra'));
+});
+test('excerpt export is explicit and retains reviewed observations', () => {
+  const {buildReport} = require('../dist/engine.js');
+  const r=analyze('As an AI assistant, I can help.');
+  assert.deepEqual(buildReport(r,true).passages,r.passages);
+  assert.equal(buildReport(r,true).excerptsIncluded,true);
+});
+test('maximum-size representative prose completes within a generous budget', () => {
+  const text = 'We make useful things today. '.repeat(3500).slice(0,100000);
+  const start=performance.now();
+  assert.ok(analyze(text).sentenceCount>3000);
+  assert.ok(performance.now()-start<5000, 'analysis exceeded five seconds');
+});

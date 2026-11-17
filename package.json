@@ -1,10 +1,13 @@
 {
   "name": "trace-ai-content-review",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Browser-local text review with transparent, unvalidated style heuristics.",
   "scripts": {
-    "test": "node --check dist/app.js && node --check dist/engine.js && node --test tests/engine.test.cjs"
+    "test": "node --check dist/app.js && node --check dist/engine.js && node --check dist/worker.js && node --test tests/*.test.cjs",
+    "evaluate": "node scripts/evaluate.cjs"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=20"
+  }
 }
